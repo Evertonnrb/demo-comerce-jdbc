@@ -1,4 +1,4 @@
-package br.com.exception;
+package br.com.controller.excpetions;
 
 public class DBIntegretyExcption extends RuntimeException{
 

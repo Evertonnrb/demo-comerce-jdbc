@@ -1,6 +1,7 @@
 package br.com.tests;
 
-import br.com.dao.DB;
+import br.com.model.dao.DB;
+import br.com.model.dao.DaoFactory;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -13,5 +14,6 @@ public class TestConnection {
         Connection con = DB.getConnection();
         System.out.println(con);
         con.close();
+
     }
 }

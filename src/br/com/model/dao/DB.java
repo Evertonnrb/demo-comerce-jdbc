@@ -1,6 +1,6 @@
-package br.com.dao;
+package br.com.model.dao;
 
-import br.com.exception.BDException;
+import br.com.controller.excpetions.BDException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
