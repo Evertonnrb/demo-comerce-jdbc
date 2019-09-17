@@ -5,6 +5,6 @@ import br.com.model.impl.VendedorDaoImpl;
 public class DaoFactory {
 
     public static VendedorDaoImpl createDaoVendedor(){
-        return new VendedorDaoImpl();
+        return new VendedorDaoImpl(DB.getConnection());
     }
 }

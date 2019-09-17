@@ -52,3 +52,6 @@ select * from vendedores;
 select * from categorias;
 select * from produtos;
 
+select vendedores.*, departamentos.nome as nome_departamento, departamentos.id as id_departamento
+                from vendedores inner join departamentos
+                on vendedores.id = departamentos.id where vendedores.id = 1);

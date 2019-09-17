@@ -15,6 +15,11 @@ public class Departamento implements Serializable {
         this.nome = nome;
     }
 
+    public Departamento(Long id, String nome) {
+        this.id = id;
+        this.nome = nome;
+    }
+
     public Long getId() {
         return id;
     }

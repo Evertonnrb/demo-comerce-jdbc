@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 
-public class Vendedores implements Serializable {
+public class Vendedor implements Serializable {
 
     private Long id;
     private String nome;
@@ -15,10 +15,20 @@ public class Vendedores implements Serializable {
     private BigDecimal comissao;
     private Departamento departamento;
 
-    public Vendedores() {
+    public Vendedor() {
     }
 
-    public Vendedores(String nome, String email, Date dataNascimento, BigDecimal salario, BigDecimal comissao, Departamento departamento) {
+    public Vendedor(Long id, String nome, String email, Date dataNascimento, BigDecimal salario, BigDecimal comissao, Departamento departamento) {
+        this.id = id;
+        this.nome = nome;
+        this.email = email;
+        this.dataNascimento = dataNascimento;
+        this.salario = salario;
+        this.comissao = comissao;
+        this.departamento = departamento;
+    }
+
+    public Vendedor(String nome, String email, Date dataNascimento, BigDecimal salario, BigDecimal comissao, Departamento departamento) {
         this.nome = nome;
         this.email = email;
         this.dataNascimento = dataNascimento;
@@ -87,7 +97,7 @@ public class Vendedores implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Vendedores that = (Vendedores) o;
+        Vendedor that = (Vendedor) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(nome, that.nome) &&
                 Objects.equals(email, that.email) &&
