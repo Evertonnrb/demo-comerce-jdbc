@@ -7,7 +7,7 @@ public interface GenericDao<T> {
 
     void cadastrar(T obj);
 
-    T atualizar(Long obj);
+    boolean atualizar(T obj);
 
     boolean remover(Long obj);
 

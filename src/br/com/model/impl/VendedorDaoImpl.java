@@ -6,18 +6,16 @@ import br.com.model.dao.GenericDao;
 import br.com.model.entities.Departamento;
 import br.com.model.entities.Vendedor;
 
+import java.math.BigDecimal;
 import java.sql.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.List;
 
 public class VendedorDaoImpl implements GenericDao<Vendedor> {
 
     private Connection conn;
-    PreparedStatement pst = null;
-    ResultSet rs = null;
-    Statement st = null;
+
     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
     public VendedorDaoImpl(Connection conn) {
@@ -27,9 +25,8 @@ public class VendedorDaoImpl implements GenericDao<Vendedor> {
     @Override
     public void cadastrar(Vendedor vendedor) {
         try {
-            pst = conn.prepareStatement("INSERT INTO vendedores (nome,email,data_nascimento,salario,comissao,id_departamento)" +
+            PreparedStatement pst = conn.prepareStatement("INSERT INTO vendedores (nome,email,data_nascimento,salario,comissao,id_departamento)" +
                     "values (?,?,?,?,?,?)");
-            conn.setAutoCommit(false);
             pst.setString(1, vendedor.getNome());
             pst.setString(2, vendedor.getEmail());
             pst.setDate(3, new Date(vendedor.getDataNascimento().getTime()));
@@ -37,26 +34,46 @@ public class VendedorDaoImpl implements GenericDao<Vendedor> {
             pst.setBigDecimal(5, vendedor.getComissao());
             pst.setLong(6, vendedor.getDepartamento().getId());
             pst.execute();
-            conn.commit();
+            DB.closeStatement(pst);
         } catch (SQLException e) {
             throw new BDException(e.getMessage());
         } finally {
-            DB.closeStatement(pst);
-            DB.closeResultSet(rs);
             DB.closeConnection();
         }
     }
 
 
     @Override
-    public Vendedor atualizar(Long obj) {
-        return null;
+    public boolean atualizar(Vendedor vendedor) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("update vendedores set nome = ?, email = ?, data_nascimento = ?, salario = ?,");
+        builder.append(" comissao = ?, id_departamento = ? where id = ?");
+        try (PreparedStatement pst = conn.prepareStatement(builder.toString())) {
+            pst.setString(1, vendedor.getNome());
+            pst.setString(2, vendedor.getEmail());
+            pst.setDate(3, new Date(vendedor.getDataNascimento().getTime()));
+            pst.setBigDecimal(4, vendedor.getSalario());
+            pst.setBigDecimal(5, vendedor.getComissao());
+            pst.setLong(6, vendedor.getDepartamento().getId());
+            pst.setLong(7, vendedor.getId());
+            return pst.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new BDException(e.getMessage());
+        }
     }
 
     @Override
-    public boolean remover(Long obj) {
-        return false;
+    public boolean remover(Long id) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("delete from vendedores where id = ?");
+        try (PreparedStatement pst = conn.prepareStatement(sql.toString())) {
+            pst.setLong(1, id);
+            return pst.execute();
+        } catch (SQLException e) {
+            throw new BDException(e.getMessage());
+        }
     }
+
 
     @Override
     public Vendedor buscarPorCod(Long obj) {
@@ -66,33 +83,73 @@ public class VendedorDaoImpl implements GenericDao<Vendedor> {
                 "\ton vendedores.id = departamentos.id\n" +
                 "\twhere vendedores.id = ?");
         try {
-            pst = conn.prepareStatement(builder.toString());
+            PreparedStatement pst = conn.prepareStatement(builder.toString());
             pst.setLong(1, obj);
-            rs = pst.executeQuery();
+            ResultSet rs = pst.executeQuery();
             if (rs.next()) {
+                Departamento departamento = createDepartamento(rs);
                 Vendedor v = createVendedor(rs);
+                v.setDepartamento(departamento);
                 return v;
             }
             return null;
         } catch (SQLException e) {
             throw new BDException(e.getMessage());
-        } finally {
-            DB.closeResultSet(rs);
-            DB.closeStatement(pst);
-
         }
-
     }
 
+    /**
+     * TODO implementar o select dos departamentos
+     *
+     * @return
+     */
     @Override
     public List<Vendedor> listarTodos() {
-        return null;
+        StringBuilder sql = new StringBuilder();
+        sql.append("select * from vendedores");
+        try (PreparedStatement pst = conn.prepareStatement(sql.toString())) {
+            List<Vendedor> vendedores = new ArrayList<>();
+            ResultSet rs = pst.executeQuery();
+            while (rs.next()) {
+                Vendedor vendedor = createVendedor(rs);
+                vendedores.add(vendedor);
+            }
+            return vendedores;
+        } catch (SQLException e) {
+            throw new BDException(e.getMessage());
+        }
     }
 
     @Override
-    public List<Vendedor> buscarPorNome(String obj) {
-        return null;
+    public List<Vendedor> buscarPorNome(String nome) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("select nome from vendedores where nome like ?");
+        try (PreparedStatement pst = conn.prepareStatement(sql.toString())) {
+            List<Vendedor> vendedores = new ArrayList<>();
+            pst.setString(1, "'%"+nome+"%'");
+            ResultSet rs = pst.executeQuery();
+            while (rs.next()) {
+                Vendedor vendedor = createVendedor(rs);
+                vendedores.add(vendedor);
+            }
+            return vendedores;
+        } catch (SQLException e) {
+            throw new BDException(e.getMessage());
+        }
     }
+
+    public boolean atualizarSalario(Vendedor vendedor,BigDecimal valor){
+        StringBuilder sql = new StringBuilder();
+        sql.append("update vendedores set salario = ? where id = ?");
+        try(PreparedStatement pst = conn.prepareStatement(sql.toString())){
+            pst.setBigDecimal(1, vendedor.getSalario().add(valor));
+            pst.setLong(2,vendedor.getId());
+            return pst.executeUpdate()>0;
+        }catch (SQLException e){
+            throw new BDException(e.getMessage());
+        }
+    }
+
 
     private Departamento createDepartamento(ResultSet rs) throws SQLException {
         Departamento departamento = new Departamento();
@@ -102,7 +159,6 @@ public class VendedorDaoImpl implements GenericDao<Vendedor> {
     }
 
     private Vendedor createVendedor(ResultSet rs) throws SQLException {
-        Departamento departamento = createDepartamento(rs);
         Vendedor vendedor = new Vendedor();
         vendedor.setId(rs.getLong("id"));
         vendedor.setNome(rs.getString("nome"));
@@ -110,7 +166,9 @@ public class VendedorDaoImpl implements GenericDao<Vendedor> {
         vendedor.setComissao(rs.getBigDecimal("comissao"));
         vendedor.setSalario(rs.getBigDecimal("salario"));
         vendedor.setDataNascimento(rs.getDate("data_nascimento"));
-        vendedor.setDepartamento(departamento);
         return vendedor;
     }
+
+
+
 }
